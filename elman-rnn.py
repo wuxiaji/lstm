@@ -8,7 +8,7 @@ from random import uniform
 import sys
 
 # Since numpy doesn't have a function for sigmoid
-# We implement it manually here 
+# We implement it manually here
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 

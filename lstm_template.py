@@ -29,46 +29,22 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
-
-# data I/O
-data = open('data/input.txt', 'r').read() # should be simple plain text file
-chars = list(set(data))
-data_size, vocab_size = len(data), len(chars)
-print('data has %d characters, %d unique.' % (data_size, vocab_size))
-char_to_ix = { ch:i for i,ch in enumerate(chars) }
-ix_to_char = { i:ch for i,ch in enumerate(chars) }
-std = 0.1
-
-option = sys.argv[1]
-
-# hyperparameters
-emb_size = 4
-hidden_size = 32  # size of hidden layer of neurons
-seq_length = 64  # number of steps to unroll the RNN for
-learning_rate = 5e-2
-max_updates = 500000
-
-concat_size = emb_size + hidden_size
-
-# model parameters
-# char embedding parameters
-Wex = np.random.randn(emb_size, vocab_size)*std # embedding layer
-
-# LSTM parameters
-Wf = np.random.randn(hidden_size, concat_size) * std # forget gate
-Wi = np.random.randn(hidden_size, concat_size) * std # input gate
-Wo = np.random.randn(hidden_size, concat_size) * std # output gate
-Wc = np.random.randn(hidden_size, concat_size) * std # c term
-
-bf = np.zeros((hidden_size, 1)) # forget bias
-bi = np.zeros((hidden_size, 1)) # input bias
-bo = np.zeros((hidden_size, 1)) # output bias
-bc = np.zeros((hidden_size, 1)) # memory bias
-
-# Output layer parameters
-Why = np.random.randn(vocab_size, hidden_size)*0.01 # hidden to output
-by = np.zeros((vocab_size, 1)) # output bias
-
+# for the loss function
+def cross_entropy(X,y):
+    """
+    X is the output from fully connected layer (num_examples x num_classes)
+    y is labels (num_examples x 1)
+    	Note that y is not one-hot encoded vector.
+    	It can be computed as y.argmax(axis=1) from one-hot encoded vectors of labels if required.
+    """
+    m = y.shape[0]
+    p = softmax(X)
+    # We use multidimensional array indexing to extract
+    # softmax probability of the correct label for each sample.
+    # Refer to https://docs.scipy.org/doc/numpy/user/basics.indexing.html#indexing-multi-dimensional-arrays for understanding multidimensional array indexing.
+    log_likelihood = -np.log(p[range(m),y])
+    loss = np.sum(log_likelihood) / m
+    return loss
 
 def forward(inputs, targets, memory):
     """
@@ -127,17 +103,27 @@ def forward(inputs, targets, memory):
         # h = o_gate * tanh(c_new)
         hs[t] = o_gate * np.tanh(c_new)
         # DONE LSTM
+
         # output layer - softmax and cross-entropy loss
-        # unnormalized log probabilities for next chars
+
+        # unnormalized log probabilities for next charsSS
+        #todo what am i supposed to do here
 
         # o = Why \cdot h + by
-
+        os[t] = np.dot(Why, hs[t]) + by
         # softmax for probabilities for next chars
         # p = softmax(o)
 
         # cross-entropy loss
-        # cross entropy loss at time t:
+
         # create an one hot vector for the label y
+        ys[t] = np.zeros((unique_chr_size, 1))
+        ys[t][labels[t]] = 1
+        # cross entropy loss at time t:
+        #       loss_t = cross_entropy(,ys[t])
+        loss_t = np.sum(-np.log(ps[t]) * ys[t])
+        loss += loss_t
+
 
         # and then cross-entropy (see the elman-rnn file for the hint)
 
@@ -193,6 +179,49 @@ def sample(memory, seed_ix, n):
 
 
     return
+
+
+# data I/O
+data = open('data/input.txt', 'r').read() # should be simple plain text file
+chars = list(set(data))
+data_size, vocab_size = len(data), len(chars)
+print('data has %d characters, %d unique.' % (data_size, vocab_size))
+char_to_ix = { ch:i for i,ch in enumerate(chars) }
+ix_to_char = { i:ch for i,ch in enumerate(chars) }
+std = 0.1
+
+option = sys.argv[1]
+
+# hyperparameters
+emb_size = 4
+hidden_size = 32  # size of hidden layer of neurons
+seq_length = 64  # number of steps to unroll the RNN for
+learning_rate = 5e-2
+max_updates = 500000
+
+concat_size = emb_size + hidden_size
+
+# model parameters
+# char embedding parameters
+Wex = np.random.randn(emb_size, vocab_size)*std # embedding layer
+
+# LSTM parameters
+Wf = np.random.randn(hidden_size, concat_size) * std # forget gate
+Wi = np.random.randn(hidden_size, concat_size) * std # input gate
+Wo = np.random.randn(hidden_size, concat_size) * std # output gate
+Wc = np.random.randn(hidden_size, concat_size) * std # c term
+
+bf = np.zeros((hidden_size, 1)) # forget bias
+bi = np.zeros((hidden_size, 1)) # input bias
+bo = np.zeros((hidden_size, 1)) # output bias
+bc = np.zeros((hidden_size, 1)) # memory bias
+
+# Output layer parameters
+Why = np.random.randn(vocab_size, hidden_size)*0.01 # hidden to output
+by = np.zeros((vocab_size, 1)) # output bias
+
+
+
 
 if option == 'train':
 
