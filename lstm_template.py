@@ -89,41 +89,43 @@ def forward(inputs, targets, memory):
     cs[-1] = np.copy(cprev)
 
     loss = 0
+
     # forward pass
     for t in range(len(inputs)):
         xs[t] = np.zeros((vocab_size,1)) # encode in 1-of-k representation
         xs[t][inputs[t]] = 1
 
-        # convert word indices to word embeddings
+        # transform the one hot vector to embedding
         wes[t] = np.dot(Wex, xs[t])
 
         # LSTM cell operation
         # first concatenate the input and h
         # This step is irregular (to save the amount of matrix multiplication we have to do)
         # I will refer to this vector as [h X]
-        zs[t] = np.row_stack((hs[t-1], wes[t]))
+        zusamIn[t] = np.row_stack((hs[t-1], wes[t]))
 
         # YOUR IMPLEMENTATION should begin from here
 
         # compute the forget gate
-        # f_gate = sigmoid (W_f \cdot [h X] + b_f)
+        # f_gate = sigmoid (Wf \cdot [h X] + b_f)
+        f_gate[t] = sigmoid(np.dot(Wf, zusamIn[t])+bf)
 
         # compute the input gate
         # i_gate = sigmoid (W_i \cdot [h X] + b_i)
-
+        i_gate[t] = sigmoid(np.dot(Wi,zusamIn[t])+bi)
         # compute the candidate memory
         # \hat{c} = tanh (W_c \cdot [h X] + b_c])
-
+        cs[t] = np.tanh(np.dot(Wc[t],zusamIn[t])+bc)
         # new memory: applying forget gate on the previous memory
         # and then adding the input gate on the candidate memory
         # c_new = f_gate * prev_c + i_gate * \hat{c}
-
+        c_new = f_gate[t]*cs[t-1]  + i_gate[t]*cs[t]
         # output gate
         # o_gate = sigmoid (Wo \cdot [h X] + b_o)
-
+        o_gate = sigmoid(np.dot(Wo,zusamIn[t])+bo)
         # new hidden state for the LSTM
         # h = o_gate * tanh(c_new)
-
+        hs[t] = o_gate * np.tanh(c_new)
         # DONE LSTM
         # output layer - softmax and cross-entropy loss
         # unnormalized log probabilities for next chars
@@ -211,7 +213,7 @@ if option == 'train':
         if p+seq_length+1 >= len(data) or n == 0:
             hprev = np.zeros((hidden_size,1)) # reset RNN memory
             cprev = np.zeros((hidden_size,1))
-        p = 0 # go from start of data
+            p = 0 # go from start of data
         inputs = [char_to_ix[ch] for ch in data[p:p+seq_length]]
         targets = [char_to_ix[ch] for ch in data[p+1:p+seq_length+1]]
 

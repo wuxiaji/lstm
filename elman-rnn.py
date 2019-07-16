@@ -28,51 +28,6 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
-# data I/O
-
-
-# should be simple plain text file. I provided the sample from "Hamlet - Shakespeares"
-data = open('data/input.txt', 'r').read()
-chars = list(set(data))
-data_size, vocab_size = len(data), len(chars)
-print('data has %d characters, %d unique.' % (data_size, vocab_size))
-char_to_ix = {ch: i for i, ch in enumerate(chars)}
-ix_to_char = {i: ch for i, ch in enumerate(chars)}
-
-# hyper-parameters deciding the network size
-emb_size = 32  # word/character embedding size
-seq_length = 128  # number of steps to unroll the RNN for the truncated back-propagation algorithm
-hidden_size = 10
-# learning rate for the Adagrad algorithm. (this one is not 'optimized', only required to make the model learn)
-learning_rate = 1e-1
-std=0.1  # The standard deviation for parameter initilization
-
-# model parameters
-# Here we initialize the parameters based an random uniform distribution, with the std of 0.01
-
-# word embedding: each character in the vocabulary is mapped to a vector with $emb_size$ neurons
-# Transform one-hot vectors to embedding X
-Wex = np.random.randn(emb_size, vocab_size) * std
-
-# weight to transform input X to hidden H
-Wxh = np.random.randn(hidden_size, emb_size) * std
-
-# weight to transform previous hidden states H_{t-1} to hidden H_t
-Whh = np.random.randn(hidden_size, hidden_size) * std  # hidden to hidden
-
-# Output layer: transforming the hidden states H to output layer
-Why = np.random.randn(vocab_size, hidden_size) * std  # hidden to output
-
-# The biases are typically initialized as zeros. But sometimes people init them with uniform distribution too.
-bh = np.zeros((hidden_size, 1)) # hidden bias
-by = np.zeros((vocab_size, 1)) # output bias
-
-# These variables are momentums for the Adagrad algorithm
-# Each parameter in the network needs one momentum correspondingly
-mWex, mWxh, mWhh, mWhy = np.zeros_like(Wex), np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)
-mbh, mby = np.zeros_like(bh), np.zeros_like(by)
-
-
 def forward(inputs, labels, memory):
 
     prev_h = memory
@@ -102,7 +57,7 @@ def forward(inputs, labels, memory):
     for t in range(len(inputs)):
 
         # one-hot vector representation for character input at time t
-        cs[t] = np.zeros((vocab_size,1))
+        cs[t] = np.zeros((unique_chr_size, 1))
         cs[t][inputs[t]] = 1
 
         # transform the one hot vector to embedding
@@ -122,7 +77,7 @@ def forward(inputs, labels, memory):
         ps[t] = softmax(os[t])
 
         # cross entropy loss at time t:
-        ys[t] = np.zeros((vocab_size, 1))
+        ys[t] = np.zeros((unique_chr_size, 1))
         ys[t][labels[t]] = 1
 
         loss_t = np.sum(-np.log(ps[t]) * ys[t])
@@ -206,7 +161,7 @@ def sample(h, seed_ix, n):
     sample a sequence of integers from the model
     h is memory state, seed_ix is seed letter for first time step
     """
-    c = np.zeros((vocab_size, 1))
+    c = np.zeros((unique_chr_size, 1))
     c[seed_ix] = 1
     generated_chars = []
     for t in range(n):
@@ -217,7 +172,7 @@ def sample(h, seed_ix, n):
 
         # the the distribution, we randomly generate samples:
         ix = np.random.multinomial(1, p.ravel())
-        c = np.zeros((vocab_size, 1))
+        c = np.zeros((unique_chr_size, 1))
 
         for j in range(len(ix)):
             if ix[j] == 1:
@@ -228,12 +183,58 @@ def sample(h, seed_ix, n):
     return generated_chars
 
 
+
+# data I/O
+
+# should be simple plain text file. I provided the sample from "Hamlet - Shakespeares"
+data = open('data/input.txt', 'r').read()
+chars = list(set(data))
+data_size, unique_chr_size = len(data), len(chars)
+print('data has %d characters, %d unique.' % (data_size, unique_chr_size))
+char_to_ix = {ch: i for i, ch in enumerate(chars)}
+ix_to_char = {i: ch for i, ch in enumerate(chars)}
+
+# hyper-parameters deciding the network size
+emb_size = 32  # word/character embedding size
+seq_length = 128  # number of steps to unroll the RNN for the truncated back-propagation algorithm
+hidden_size = 10
+# learning rate for the Adagrad algorithm. (this one is not 'optimized', only required to make the model learn)
+learning_rate = 1e-1
+std=0.1  # The standard deviation for parameter initilization
+
+# model parameters
+# Here we initialize the parameters based an random uniform distribution, with the std of 0.01
+
+# word embedding: each character in the vocabulary is mapped to a vector with $emb_size$ neurons
+# Transform one-hot vectors to embedding X
+Wex = np.random.randn(emb_size, unique_chr_size) * std
+
+# weight to transform input X to hidden H //W
+Wxh = np.random.randn(hidden_size, emb_size) * std
+
+# weight to transform previous hidden states H_{t-1} to hidden H_t //U
+Whh = np.random.randn(hidden_size, hidden_size) * std  # hidden to hidden
+
+# Output layer: transforming the hidden states H to output layer
+Why = np.random.randn(unique_chr_size, hidden_size) * std  # hidden to output
+
+# The biases are typically initialized as zeros. But sometimes people init them with uniform distribution too.
+bh = np.zeros((hidden_size, 1)) # hidden bias
+by = np.zeros((unique_chr_size, 1)) # output bias
+
+# These variables are momentums for the Adagrad algorithm
+# Each parameter in the network needs one momentum correspondingly
+mWex, mWxh, mWhh, mWhy = np.zeros_like(Wex), np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)
+mbh, mby = np.zeros_like(bh), np.zeros_like(by)
+
+
 option = sys.argv[1]  # train or gradcheck
+#option = 'gradcheck'
 
 if option == 'train':
 
     n, p = 0, 0
-    smooth_loss = -np.log(1.0/vocab_size)*seq_length # loss at iteration 0
+    smooth_loss = -np.log(1.0 / unique_chr_size) * seq_length  # loss at iteration 0
     while True:
         # prepare inputs (we're sweeping from left to right in steps seq_length long)
         if p+seq_length+1 >= len(data) or n == 0:
@@ -302,8 +303,13 @@ elif option == 'gradcheck':
             # fetch both numerical and analytic gradient
             grad_analytic = grad.flat[i]
             grad_numerical = (loss_positive - loss_negative) / ( 2 * delta )
-            rel_error = abs(grad_analytic - grad_numerical) / abs(grad_numerical + grad_analytic)
-
+            print('Testing grad %f, %f ' % (grad_numerical, grad_analytic))
+            mutter = abs(grad_numerical + grad_analytic)
+            if mutter == 0:
+                rel_error = 0
+                print("rel_error set to 0")
+            else:
+                rel_error = abs(grad_analytic - grad_numerical) / abs(grad_numerical + grad_analytic)
             if rel_error > 0.01:
                 print ('WARNING %f, %f => %e ' % (grad_numerical, grad_analytic, rel_error))
 
