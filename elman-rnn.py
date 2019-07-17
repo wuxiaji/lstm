@@ -70,7 +70,8 @@ def forward(inputs, labels, memory):
         hs[t] = np.tanh(h_pre_activation)
 
         # output layer:
-        # this is the unnormalized log probabilities for next chars (across all chars in the vocabulary)
+        # this is the unnormalized log probabilities for next chars
+        # (across all chars in the vocabulary)
         os[t] = np.dot(Why, hs[t]) + by
 
         # softmax layer to get normalized probabilities:
