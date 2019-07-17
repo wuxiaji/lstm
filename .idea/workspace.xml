@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="83e732f6-b662-4271-bdbd-b90d44dd864e" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/lstm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/elman-rnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/elman-rnn.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lstm_template.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lstm.py" beforeDir="false" afterPath="$PROJECT_DIR$/lstm.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -32,8 +30,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/lstm.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="6404">
-                  <caret line="298" column="22" lean-forward="true" selection-start-line="298" selection-start-column="22" selection-end-line="298" selection-end-column="22" />
+                <state relative-caret-position="230">
+                  <caret line="159" column="39" lean-forward="true" selection-start-line="159" selection-start-column="39" selection-end-line="159" selection-end-column="39" />
                   <folding>
                     <element signature="e#169#187#0" expanded="true" />
                   </folding>
@@ -48,8 +46,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/elman-rnn.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="132">
-                  <caret line="99" column="29" selection-start-line="99" selection-start-column="29" selection-end-line="99" selection-end-column="29" />
+                <state relative-caret-position="384">
+                  <caret line="93" column="36" selection-start-line="93" selection-start-column="36" selection-end-line="93" selection-end-column="36" />
                   <folding>
                     <element signature="e#146#164#0" expanded="true" />
                   </folding>
@@ -72,7 +70,6 @@
     <findStrings>
       <find>enumerate</find>
       <find>i</find>
-      <find>forward</find>
       <find>wes</find>
       <find>inputs</find>
       <find />
@@ -84,6 +81,11 @@
       <find>memory</find>
       <find>xs</find>
       <find>activations</find>
+      <find>cross_entropy</find>
+      <find>last_hidden</find>
+      <find>last</find>
+      <find>forward</find>
+      <find>labels</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -93,8 +95,8 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/back.py" />
-        <option value="$PROJECT_DIR$/elman-rnn.py" />
         <option value="$PROJECT_DIR$/lstm_template.py" />
+        <option value="$PROJECT_DIR$/elman-rnn.py" />
         <option value="$PROJECT_DIR$/lstm.py" />
       </list>
     </option>
@@ -251,12 +253,12 @@
     <frame x="65" y="-4" width="1855" height="956" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.22816594" />
+      <window_info content_ui="combo" id="Project" order="0" weight="0.22816594" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.24970692" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.24970692" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -296,6 +298,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/lstm_template.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="7" column="16" lean-forward="true" selection-end-line="315" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/elman-rnn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="330">
@@ -306,17 +315,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lstm_template.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="154">
-          <caret line="7" column="16" lean-forward="true" selection-end-line="315" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/lstm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6404">
-          <caret line="298" column="22" lean-forward="true" selection-start-line="298" selection-start-column="22" selection-end-line="298" selection-end-column="22" />
+        <state relative-caret-position="230">
+          <caret line="159" column="39" lean-forward="true" selection-start-line="159" selection-start-column="39" selection-end-line="159" selection-end-column="39" />
           <folding>
             <element signature="e#169#187#0" expanded="true" />
           </folding>

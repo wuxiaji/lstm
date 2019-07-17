@@ -28,7 +28,7 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
-def forward(inputs, labels, memory):
+def forward(inputs, targets, memory):
 
     prev_h = memory
     """
@@ -79,7 +79,7 @@ def forward(inputs, labels, memory):
 
         # cross entropy loss at time t:
         ys[t] = np.zeros((unique_chr_size, 1))
-        ys[t][labels[t]] = 1
+        ys[t][targets[t]] = 1
 
         loss_t = np.sum(-np.log(ps[t]) * ys[t])
 
@@ -87,8 +87,8 @@ def forward(inputs, labels, memory):
 
     # packaging the activations to use in the backward pass
     activations = (xs, cs, hs, os, ps, ys)
-    last_hidden = hs[-1]
-    return loss, activations, last_hidden
+    memory_last_hidden = hs[-1]
+    return loss, activations, memory_last_hidden
 
 
 def backward(activations, clipping=True):

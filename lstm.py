@@ -156,9 +156,8 @@ def forward(inputs, targets, memory):
 
         # create an one hot vector for the label y
         ys[t] = np.zeros((unique_chr_size, 1))
-        ys[t][labels[t]] = 1
+        ys[t][targets[t]] = 1
         # cross entropy loss at time t:
-        #       loss_t = cross_entropy(,ys[t])
         loss_t = np.sum(-np.log(ps[t]) * ys[t])
         loss += loss_t
 
@@ -189,6 +188,8 @@ def backward(activations, clipping=True):
 
     # IMPLEMENT YOUR BACKPROP HERE
     # refer to the file elman_rnn.py for more details
+        do = ps[t] - ys[t]
+
 
     if clipping:
         # clip to mitigate exploding gradients
@@ -212,7 +213,7 @@ def sample(memory, seed_ix, n):
     for t in range(n):
     # IMPLEMENT THE FORWARD FUNCTION ONE MORE TIME HERE
     # BUT YOU DON"T NEED TO STORE THE ACTIVATIONS
-
+        pass
     return
 
 
