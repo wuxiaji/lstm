@@ -127,28 +127,30 @@ def forward(inputs, targets, memory):
         # h = o_gate * tanh(c_new)
         hs[t] = o_gate * np.tanh(c_new)
         # DONE LSTM
+
         # output layer - softmax and cross-entropy loss
-        # unnormalized log probabilities for next chars
-
-        # o = Why \cdot h + by
-
-        # softmax for probabilities for next chars
-        # p = softmax(o)
-
-        # cross-entropy loss
+            # unnormalized log probabilities for next chars
+                # o = Why \cdot h + by
+        os[t] = np.dot(Why, hs[t]) + by
+            # softmax for probabilities for next chars
+                # p = softmax(o)
+        ps[t] = softmax(os[t])
         # cross entropy loss at time t:
-        # create an one hot vector for the label y
-
+        # create an one hot vector for the label(targets) y
+        ys[t] = np.zeros((unique_chr_size, 1))
+        ys[t][targets[t]] = 1
         # and then cross-entropy (see the elman-rnn file for the hint)
+        loss_t = np.sum(-np.log(ps[t]) * ys[t])
+        loss += loss_t
 
     # define your activations
+    activations = (xs, cs, hs, os, ps, ys)  #todo may be more parameters
     memory = (hs[len(inputs)-1], cs[len(inputs)-1])
 
     return loss, activations, memory
 
-
 def backward(activations, clipping=True):
-
+    xs, cs, hs, os, ps, ys = activations
     # backward pass: compute gradients going backwards
     # Here we allocate memory for the gradients
     dWex, dWhy = np.zeros_like(Wex), np.zeros_like(Why)
@@ -160,12 +162,13 @@ def backward(activations, clipping=True):
     # We need to initialize the gradients for these variables
     dhnext = np.zeros_like(hs[0])
     dcnext = np.zeros_like(cs[0])
-
     # back propagation through time starts here
     for t in reversed(range(len(inputs))):
+        #output diff
+        do = ps[t] - ys[t]
+        dWhy += np.dot(do, hs[t].T)
+        dby += do
 
-        # IMPLEMENT YOUR BACKPROP HERE
-        # refer to the file elman_rnn.py for more details
 
 
     if clipping:

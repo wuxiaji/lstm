@@ -28,7 +28,7 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
-def forward(inputs, labels, memory):
+def forward(inputs, targets, memory):
 
     prev_h = memory
     """
@@ -70,7 +70,7 @@ def forward(inputs, labels, memory):
         hs[t] = np.tanh(h_pre_activation)
 
         # output layer:
-        # this is the unnormalized log probabilities for next chars (across all chars in the vocabulary)
+        # unnormalized log probabilities for next chars (across all chars in the vocabulary)
         os[t] = np.dot(Why, hs[t]) + by
 
         # softmax layer to get normalized probabilities:
@@ -78,10 +78,9 @@ def forward(inputs, labels, memory):
 
         # cross entropy loss at time t:
         ys[t] = np.zeros((unique_chr_size, 1))
-        ys[t][labels[t]] = 1
+        ys[t][targets[t]] = 1
 
         loss_t = np.sum(-np.log(ps[t]) * ys[t])
-
         loss += loss_t
 
     # packaging the activations to use in the backward pass
@@ -126,7 +125,7 @@ def backward(activations, clipping=True):
         dh = np.dot(Why.T, do) + dh
 
         # backprop through the activation function (tanh)
-        dtanh_h = 1 - hs[t] * hs[t]
+        dtanh_h = 1 - hs[t] * hs[t]  # ! I think this is constant
         dh_pre_activation = dtanh_h * dh # because h = tanh(h_pre_activation)
 
         # next, since  H = tanh ( Wh . H + Wx . x + bh )
@@ -150,7 +149,7 @@ def backward(activations, clipping=True):
 
     if clipping:
         for dparam in [dWxh, dWhh, dWhy, dbh, dby]:
-            np.clip(dparam, -5, 5, out=dparam) # clip to mitigate exploding gradients
+            np.clip(dparam, -5, 5, out=dparam)  # clip to mitigate exploding gradients
 
     gradients = (dWex, dWxh, dWhh, dWhy, dbh, dby)
     return gradients
