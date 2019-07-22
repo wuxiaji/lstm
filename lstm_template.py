@@ -165,10 +165,7 @@ def backward(activations, clipping=True):
     # back propagation through time starts here
     for t in reversed(range(len(inputs))):
         #output diff
-        do = ps[t] - ys[t]
-        dWhy += np.dot(do, hs[t].T)
-        dby += do
-
+        dLdp = ps[t]- ys[t]
 
 
     if clipping:

@@ -90,6 +90,7 @@ def forward(inputs, targets, memory):
 
 
 def backward(activations, clipping=True):
+
     """
     during the backward pass we follow the track of the forward pass
     the activations are needed so that we can avoid unnecessary re-computation
@@ -115,18 +116,18 @@ def backward(activations, clipping=True):
         # but here I skip it directly to the gradients of the unnormalized scores o because
         # basically dL / do = p - y
         # from the cross entropy gradients. (the explanation is a bit too long to write here)
-        do = ps[t] - ys[t]
+        dLh = ps[t] - ys[t]  # dLh = dLoss / dOutput
 
         # the gradients w.r.t to the weights and the bias that were used to create o[t]
-        dWhy += np.dot(do, hs[t].T)
-        dby += do
+        dWhy += np.dot(dLh, hs[t].T)  # chain rule & os[t] = Why*hs[t] +by
+        dby += dLh
 
         # because h is connected to both o and the next h, we sum the gradients up
-        dh = np.dot(Why.T, do) + dh
+        dh = np.dot(Why.T, dLh) + dh
 
         # backprop through the activation function (tanh)
-        dtanh_h = 1 - hs[t] * hs[t]  # ! I think this is constant
-        dh_pre_activation = dtanh_h * dh # because h = tanh(h_pre_activation)
+        dtanh_h = 1 - hs[t] * hs[t]
+        dh_pre_activation = dtanh_h * dh
 
         # next, since  H = tanh ( Wh . H + Wx . x + bh )
         # we use dh to backprop to dWh and dWx
