@@ -3,6 +3,7 @@ Minimal character-level LSTM model. Written by Ngoc Quan Pham
 Code structure borrowed from the Vanilla RNN model from Andreij Karparthy @karparthy.
 BSD License
 """
+
 import numpy as np
 from random import uniform
 import sys
@@ -11,7 +12,7 @@ import sys
 # Since numpy doesn't have a function for sigmoid
 # We implement it manually here
 def sigmoid(x):
-  return 1 / (1 + np.exp(-x))
+    return 1 / (1 + np.exp(-x))
 
 
 # The derivative of the sigmoid function
@@ -21,7 +22,7 @@ def dsigmoid(y):
 
 # The derivative of the tanh function
 def dtanh(x):
-    return 1 - x*x
+    return 1 - x * x
 
 
 # The numerically stable softmax implementation
@@ -31,12 +32,12 @@ def softmax(x):
 
 
 # data I/O
-data = open('data/input.txt', 'r').read() # should be simple plain text file
+data = open('data/input.txt', 'r').read()  # should be simple plain text file
 chars = list(set(data))
 data_size, vocab_size = len(data), len(chars)
 print('data has %d characters, %d unique.' % (data_size, vocab_size))
-char_to_ix = { ch:i for i,ch in enumerate(chars) }
-ix_to_char = { i:ch for i,ch in enumerate(chars) }
+char_to_ix = {ch: i for i, ch in enumerate(chars)}
+ix_to_char = {i: ch for i, ch in enumerate(chars)}
 std = 0.1
 
 option = sys.argv[1]
@@ -52,22 +53,39 @@ concat_size = emb_size + hidden_size
 
 # model parameters
 # char embedding parameters
-Wex = np.random.randn(emb_size, vocab_size)*std # embedding layer
+Wex = np.random.randn(emb_size, vocab_size) * std  # embedding layer
 
 # LSTM parameters
-Wf = np.random.randn(hidden_size, concat_size) * std # forget gate
-Wi = np.random.randn(hidden_size, concat_size) * std # input gate
-Wo = np.random.randn(hidden_size, concat_size) * std # output gate
-Wc = np.random.randn(hidden_size, concat_size) * std # c term
+Wf = np.random.randn(hidden_size, concat_size) * std  # forget gate
+Wi = np.random.randn(hidden_size, concat_size) * std  # input gate
+Wo = np.random.randn(hidden_size, concat_size) * std  # output gate
+Wc = np.random.randn(hidden_size, concat_size) * std  # c term
 
-bf = np.zeros((hidden_size, 1)) # forget bias
-bi = np.zeros((hidden_size, 1)) # input bias
-bo = np.zeros((hidden_size, 1)) # output bias
-bc = np.zeros((hidden_size, 1)) # memory bias
+bf = np.zeros((hidden_size, 1))  # forget bias
+bi = np.zeros((hidden_size, 1))  # input bias
+bo = np.zeros((hidden_size, 1))  # output bias
+bc = np.zeros((hidden_size, 1))  # memory bias
 
 # Output layer parameters
-Why = np.random.randn(vocab_size, hidden_size)*0.01 # hidden to output
-by = np.zeros((vocab_size, 1)) # output bias
+Why = np.random.randn(vocab_size, hidden_size) * 0.01  # hidden to output
+by = np.zeros((vocab_size, 1))  # output bias
+
+
+# for the loss function
+def cross_entropy(X, y):
+    """
+    X is the output from fully connected layer (num_examples x num_classes)
+    y is labels (num_examples x 1)
+    	Note that y is not one-hot encoded vector.
+    	It can be computed as y.argmax(axis=1) from one-hot encoded vectors of labels if required.
+    """
+    m = y.shape[0]
+    p = softmax(X)
+    # We use multidimensional array indexing to extract
+    # softmax probability of the correct label for each sample.
+    log_likelihood = -np.log(p[range(m), y])
+    loss = np.sum(log_likelihood) / m
+    return loss
 
 
 def forward(inputs, targets, memory):
@@ -92,7 +110,7 @@ def forward(inputs, targets, memory):
 
     # forward pass
     for t in range(len(inputs)):
-        xs[t] = np.zeros((vocab_size,1)) # encode in 1-of-k representation
+        xs[t] = np.zeros((vocab_size, 1))  # encode in 1-of-k representation
         xs[t][inputs[t]] = 1
 
         # transform the one hot vector to embedding
@@ -102,27 +120,27 @@ def forward(inputs, targets, memory):
         # first concatenate the input and h
         # This step is irregular (to save the amount of matrix multiplication we have to do)
         # I will refer to this vector as [h X]
-        zusamIn[t] = np.row_stack((hs[t-1], wes[t]))
+        zusamIn[t] = np.row_stack((hs[t - 1], wes[t]))
 
         # YOUR IMPLEMENTATION should begin from here
 
         # compute the forget gate
         # f_gate = sigmoid (Wf \cdot [h X] + b_f)
-        f_gate[t] = sigmoid(np.dot(Wf, zusamIn[t])+bf)
+        f_gate[t] = sigmoid(np.dot(Wf, zusamIn[t]) + bf)
 
         # compute the input gate
         # i_gate = sigmoid (W_i \cdot [h X] + b_i)
-        i_gate[t] = sigmoid(np.dot(Wi,zusamIn[t])+bi)
+        i_gate[t] = sigmoid(np.dot(Wi, zusamIn[t]) + bi)
         # compute the candidate memory
         # \hat{c} = tanh (W_c \cdot [h X] + b_c])
-        cs[t] = np.tanh(np.dot(Wc[t],zusamIn[t])+bc)
+        cs[t] = np.tanh(np.dot(Wc[t], zusamIn[t]) + bc)
         # new memory: applying forget gate on the previous memory
         # and then adding the input gate on the candidate memory
         # c_new = f_gate * prev_c + i_gate * \hat{c}
-        c_new = f_gate[t]*cs[t-1]  + i_gate[t]*cs[t]
+        c_new = f_gate[t] * cs[t - 1] + i_gate[t] * cs[t]
         # output gate
         # o_gate = sigmoid (Wo \cdot [h X] + b_o)
-        o_gate = sigmoid(np.dot(Wo,zusamIn[t])+bo)
+        o_gate = sigmoid(np.dot(Wo, zusamIn[t]) + bo)
         # new hidden state for the LSTM
         # h = o_gate * tanh(c_new)
         hs[t] = o_gate * np.tanh(c_new)
@@ -144,8 +162,8 @@ def forward(inputs, targets, memory):
         loss += loss_t
 
     # define your activations
-    activations = (xs, cs, hs, os, ps, ys)  #todo may be more parameters
-    memory = (hs[len(inputs)-1], cs[len(inputs)-1])
+    memory = (hs[len(inputs) - 1], cs[len(inputs) - 1])
+    activations = (xs, cs, hs, os, ps, ys)  # if other para are needed in backwark, define it here
 
     return loss, activations, memory
 
@@ -155,9 +173,9 @@ def backward(activations, clipping=True):
     # Here we allocate memory for the gradients
     dWex, dWhy = np.zeros_like(Wex), np.zeros_like(Why)
     dby = np.zeros_like(by)
-    dWf, dWi, dWc, dWo = np.zeros_like(Wf), np.zeros_like(Wi),np.zeros_like(Wc), np.zeros_like(Wo)
-    dbf, dbi, dbc, dbo = np.zeros_like(bf), np.zeros_like(bi),np.zeros_like(bc), np.zeros_like(bo)
-
+    dWf, dWi, dWc, dWo = np.zeros_like(Wf), np.zeros_like(Wi), np.zeros_like(Wc), np.zeros_like(Wo)
+    dbf, dbi, dbc, dbo = np.zeros_like(bf), np.zeros_like(bi), np.zeros_like(bc), np.zeros_like(bo)
+    xs, cs, hs, os, ps, ys = activations
     # similar to the hidden states in the vanilla RNN
     # We need to initialize the gradients for these variables
     dhnext = np.zeros_like(hs[0])
@@ -188,11 +206,11 @@ def sample(memory, seed_ix, n):
     x[seed_ix] = 1
 
     for t in range(n):
-        # IMPLEMENT THE FORWARD FUNCTION ONE MORE TIME HERE
-        # BUT YOU DON"T NEED TO STORE THE ACTIVATIONS
-
-
+    # IMPLEMENT THE FORWARD FUNCTION ONE MORE TIME HERE
+    # BUT YOU DON"T NEED TO STORE THE ACTIVATIONS
+        pass
     return
+
 
 if option == 'train':
 
@@ -201,27 +219,27 @@ if option == 'train':
 
     # momentum variables for Adagrad
     mWex, mWhy = np.zeros_like(Wex), np.zeros_like(Why)
-    mby = np.zeros_like(by) 
+    mby = np.zeros_like(by)
 
     mWf, mWi, mWo, mWc = np.zeros_like(Wf), np.zeros_like(Wi), np.zeros_like(Wo), np.zeros_like(Wc)
     mbf, mbi, mbo, mbc = np.zeros_like(bf), np.zeros_like(bi), np.zeros_like(bo), np.zeros_like(bc)
 
-    smooth_loss = -np.log(1.0/vocab_size)*seq_length # loss at iteration 0
-    
+    smooth_loss = -np.log(1.0 / vocab_size) * seq_length  # loss at iteration 0
+
     while True:
         # prepare inputs (we're sweeping from left to right in steps seq_length long)
-        if p+seq_length+1 >= len(data) or n == 0:
-            hprev = np.zeros((hidden_size,1)) # reset RNN memory
-            cprev = np.zeros((hidden_size,1))
-            p = 0 # go from start of data
-        inputs = [char_to_ix[ch] for ch in data[p:p+seq_length]]
-        targets = [char_to_ix[ch] for ch in data[p+1:p+seq_length+1]]
+        if p + seq_length + 1 >= len(data) or n == 0:
+            hprev = np.zeros((hidden_size, 1))  # reset RNN memory
+            cprev = np.zeros((hidden_size, 1))
+            p = 0  # go from start of data
+        inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
+        targets = [char_to_ix[ch] for ch in data[p + 1:p + seq_length + 1]]
 
         # sample from the model now and then
         if n % 100 == 0:
             sample_ix = sample((hprev, cprev), inputs[0], 200)
             txt = ''.join(ix_to_char[ix] for ix in sample_ix)
-            print ('----\n %s \n----' % (txt, ))
+            print('----\n %s \n----' % (txt,))
 
         # forward seq_length characters through the net and fetch gradient
         loss, activations, memory = forward(inputs, targets, (hprev, cprev))
@@ -230,17 +248,17 @@ if option == 'train':
         hprev, cprev = memory
         dWex, dWf, dWi, dWo, dWc, dbf, dbi, dbo, dbc, dWhy, dby = gradients
         smooth_loss = smooth_loss * 0.999 + loss * 0.001
-        if n % 100 == 0: print ('iter %d, loss: %f' % (n, smooth_loss)) # print progress
+        if n % 100 == 0: print('iter %d, loss: %f' % (n, smooth_loss))  # print progress
 
         # perform parameter update with Adagrad
         for param, dparam, mem in zip([Wf, Wi, Wo, Wc, bf, bi, bo, bc, Wex, Why, by],
-                                    [dWf, dWi, dWo, dWc, dbf, dbi, dbo, dbc, dWex, dWhy, dby],
-                                    [mWf, mWi, mWo, mWc, mbf, mbi, mbo, mbc, mWex, mWhy, mby]):
+                                      [dWf, dWi, dWo, dWc, dbf, dbi, dbo, dbc, dWex, dWhy, dby],
+                                      [mWf, mWi, mWo, mWc, mbf, mbi, mbo, mbc, mWex, mWhy, mby]):
             mem += dparam * dparam
-            param += -learning_rate * dparam / np.sqrt(mem + 1e-8) # adagrad update
+            param += -learning_rate * dparam / np.sqrt(mem + 1e-8)  # adagrad update
 
-        p += seq_length # move data pointer
-        n += 1 # iteration counter
+        p += seq_length  # move data pointer
+        n += 1  # iteration counter
         n_updates += 1
         if n_updates >= max_updates:
             break
@@ -248,8 +266,8 @@ if option == 'train':
 elif option == 'gradcheck':
 
     p = 0
-    inputs = [char_to_ix[ch] for ch in data[p:p+seq_length]]
-    targets = [char_to_ix[ch] for ch in data[p+1:p+seq_length+1]]
+    inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
+    targets = [char_to_ix[ch] for ch in data[p + 1:p + seq_length + 1]]
 
     delta = 0.001
 
@@ -262,16 +280,16 @@ elif option == 'gradcheck':
     gradients = backward(activations, clipping=False)
     dWex, dWf, dWi, dWo, dWc, dbf, dbi, dbo, dbc, dWhy, dby = gradients
 
-    for weight, grad, name in zip([Wf, Wi, Wo, Wc, bf, bi, bo, bc, Wex, Why, by], 
-                                   [dWf, dWi, dWo, dWc, dbf, dbi, dbo, dbc, dWex    , dWhy, dby],
-                                   ['Wf', 'Wi', 'Wo', 'Wc', 'bf', 'bi', 'bo', 'bc', 'Wex', 'Why', 'by']):
+    for weight, grad, name in zip([Wf, Wi, Wo, Wc, bf, bi, bo, bc, Wex, Why, by],
+                                  [dWf, dWi, dWo, dWc, dbf, dbi, dbo, dbc, dWex, dWhy, dby],
+                                  ['Wf', 'Wi', 'Wo', 'Wc', 'bf', 'bi', 'bo', 'bc', 'Wex', 'Why', 'by']):
 
         str_ = ("Dimensions dont match between weight and gradient %s and %s." % (weight.shape, grad.shape))
-        assert(weight.shape == grad.shape), str_
+        assert (weight.shape == grad.shape), str_
 
         print(name)
         for i in range(weight.size):
-      
+
             # evaluate cost at [x + delta] and [x - delta]
             w = weight.flat[i]
             weight.flat[i] = w + delta
@@ -281,10 +299,10 @@ elif option == 'gradcheck':
             weight.flat[i] = w  # reset old value for this parameter
 
             grad_analytic = grad.flat[i]
-            grad_numerical = (loss_positive - loss_negative) / ( 2 * delta )
+            grad_numerical = (loss_positive - loss_negative) / (2 * delta)
 
             # compare the relative error between analytical and numerical gradients
             rel_error = abs(grad_analytic - grad_numerical) / abs(grad_numerical + grad_analytic)
 
             if rel_error > 0.01:
-                print ('WARNING %f, %f => %e ' % (grad_numerical, grad_analytic, rel_error))
+                print('WARNING %f, %f => %e ' % (grad_numerical, grad_analytic, rel_error))

@@ -85,8 +85,8 @@ def forward(inputs, targets, memory):
 
     # packaging the activations to use in the backward pass
     activations = (xs, cs, hs, os, ps, ys)
-    last_hidden = hs[-1]
-    return loss, activations, last_hidden
+    memory_last_hidden = hs[-1]
+    return loss, activations, memory_last_hidden
 
 
 def backward(activations, clipping=True):
