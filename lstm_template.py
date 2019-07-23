@@ -165,8 +165,8 @@ def backward(activations, clipping=True):
     # back propagation through time starts here
     for t in reversed(range(len(inputs))):
         #output diff
-        dLdp = ps[t]- ys[t]
-
+        dLo = ps[t]- ys[t]
+        dWhy =
 
     if clipping:
         # clip to mitigate exploding gradients
