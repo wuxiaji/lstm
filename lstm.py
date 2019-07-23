@@ -13,7 +13,7 @@ import sys
 # We implement it manually here
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
-
+# test line to delete
 
 # The derivative of the sigmoid function
 def dsigmoid(y):
