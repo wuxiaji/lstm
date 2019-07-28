@@ -119,7 +119,7 @@ def forward(inputs, targets, memory):
         # LSTM cell operation
         # first concatenate the input and h
         # This step is irregular (to save the amount of matrix multiplication we have to do)
-        # I will refer to this vector as [h X]
+        # I will refer to this vector as [h X] //other names:
         zusamIn[t] = np.row_stack((hs[t - 1], wes[t]))
 
         # YOUR IMPLEMENTATION should begin from here
@@ -183,8 +183,47 @@ def backward(activations, clipping=True):
     # back propagation through time starts here
     for t in reversed(range(len(inputs))):
         #output diff
-        dLo = ps[t]- ys[t]
-        dWhy =
+        dLo = ps[t]- ys[t]  # orignal name dLo == do
+        dWhy += np.dot(dLo,hs[t].T)
+        dhs[t] = np.dot(Why.T, dLo) + dhnext
+        dby += dLo
+
+        do_gate = dhs[t]*np.tanh(cs[t])
+        dcs[t] = dhs[t]*o_gate*dtanh(cs[t]) + dcnext
+        df_gate = dcs[t]*cd[t-1]
+        dcs[t-1] = dcs[t]*f_gate[t]
+        di_gate = dcs[t]*dcs[t]*c_gate[t]
+        dc_gate = dcs[t]*i_gate[t]
+
+        dcnext = dcs[t-1]  # c update
+
+        # through gates *4
+        di_gate_sigmoid = di_gate * dsigmoid(i_gate[t])
+        dWi += di_gate_sigmoid.dot(zs[t].T)
+        dzs[t] = Wi.T.dot(di_gate_sigmoid)
+        dbi += di_gate_sigmoid
+
+        df_gate_sigmoid = df_gate * dsigmoid(f_gate[t])
+        dWf += df_gate_sigmoid.dot(zs[t].T)
+        dzs[t] += Wf.T.dot(df_gate_sigmoid)
+        dbf += df_gate_sigmoid
+
+        do_gate_sigmoid = do_gate * dsigmoid(o_gate[t])
+        dWo += do_gate_sigmoid.dot(zs[t].T)
+        dzs[t] += Wo.T.dot(do_gate_sigmoid)
+        dbo += do_gate_sigmoid
+
+        dc_gate_tanh = dc_gate * dtanh(c_gate[t])
+        dWc += dc_gate_tanh.dot(zs[t].T)
+        dzs[t] += Wc.T.dot(dc_gate_tanh)
+        dbc += dc_gate_tanh
+
+        # update dhnext
+        dhs[t-1] = dzs[t][0:hs[t - 1].shape[0],:]
+        dhnext = dhs[t-1]
+
+        dwes[t] = dzs[t][hs[t - 1].shape[0]:,:]
+        dWex += dwes[t].dot(xs[t].T)
 
     if clipping:
         # clip to mitigate exploding gradients
@@ -206,10 +245,39 @@ def sample(memory, seed_ix, n):
     x[seed_ix] = 1
 
     for t in range(n):
-    # IMPLEMENT THE FORWARD FUNCTION ONE MORE TIME HERE
-    # BUT YOU DON"T NEED TO STORE THE ACTIVATIONS
-        pass
-    return
+    # IMPLEMENT THE FORWARD FUNCTION ONE MORE TIME HERE, BUT YOU DON"T NEED TO STORE THE ACTIVATIONS
+
+        # convert word indices to word embeddings
+        wes = np.dot(Wex, x)
+
+        # LSTM cell operation
+        # first concatenate the input and h
+        # This step is irregular (to save the amount of matrix multiplication we have to do)
+        # I will refer to this vector as [h X]
+        z = np.row_stack((h, wes))
+
+        f_gate = sigmoid(Wf.dot(z) + bf)
+        i_gate = sigmoid(Wi.dot(z) + bi)
+        c_gate = np.tanh(Wc.dot(z) + bc)
+        c = f_gate * c + i_gate * c_gate
+        o_gate = sigmoid(Wo.dot(z) + bo)
+        h = o_gate * np.tanh(c)
+
+        o = Why.dot(h) + by
+        p = softmax(o)
+
+        # the the distribution, we randomly generate samples:
+        ix = np.random.multinomial(1, p.ravel())
+        ch = np.zeros((vocab_size, 1))
+
+        index = None
+        for j in range(len(ix)):
+            if ix[j] == 1:
+                index = j
+        ch[index] = 1
+        generated_chars.append(index)
+
+    return generated_chars
 
 
 if option == 'train':
