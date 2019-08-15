@@ -1,6 +1,6 @@
 """
-Minimal character-level LSTM model. Written by Ngoc Quan Pham
-Code structure borrowed from the Vanilla RNN model from Andreij Karparthy @karparthy.
+Network basic structur provided for the assignment of the lecture Deep Learning and Neural Networks - KIT (ISL)
+Code structure borrowed from the Vanilla RNN model from Andreij Karparthy @karparthy & Ngoc Quan Pham.
 BSD License
 """
 
@@ -13,7 +13,6 @@ import sys
 # We implement it manually here
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
-# test line to delete
 
 # The derivative of the sigmoid function
 def dsigmoid(y):
@@ -73,12 +72,6 @@ by = np.zeros((vocab_size, 1))  # output bias
 
 # for the loss function
 def cross_entropy(X, y):
-    """
-    X is the output from fully connected layer (num_examples x num_classes)
-    y is labels (num_examples x 1)
-    	Note that y is not one-hot encoded vector.
-    	It can be computed as y.argmax(axis=1) from one-hot encoded vectors of labels if required.
-    """
     m = y.shape[0]
     p = softmax(X)
     # We use multidimensional array indexing to extract
@@ -99,8 +92,6 @@ def forward(inputs, targets, memory):
     # so here you need two different hidden layers
     hprev, cprev = memory
 
-    # Here you should allocate some variables to store the activations during forward
-    # One of them here is to store the hiddens and the cells
     hs, cs = {}
 
     hs[-1] = np.copy(hprev)
@@ -113,71 +104,53 @@ def forward(inputs, targets, memory):
         xs[t] = np.zeros((vocab_size, 1))  # encode in 1-of-k representation
         xs[t][inputs[t]] = 1
 
-        # transform the one hot vector to embedding
         wes[t] = np.dot(Wex, xs[t])
 
         # LSTM cell operation
         # first concatenate the input and h
         # This step is irregular (to save the amount of matrix multiplication we have to do)
-        # I will refer to this vector as [h X] //other names:
         zusamIn[t] = np.row_stack((hs[t - 1], wes[t]))
 
-        # YOUR IMPLEMENTATION should begin from here
+        ########### YOUR IMPLEMENTATION should begin from here ##########
 
-        # compute the forget gate
-        # f_gate = sigmoid (Wf \cdot [h X] + b_f)
         f_gate[t] = sigmoid(np.dot(Wf, zusamIn[t]) + bf)
-
-        # compute the input gate
-        # i_gate = sigmoid (W_i \cdot [h X] + b_i)
         i_gate[t] = sigmoid(np.dot(Wi, zusamIn[t]) + bi)
-        # compute the candidate memory
-        # \hat{c} = tanh (W_c \cdot [h X] + b_c])
         cs[t] = np.tanh(np.dot(Wc[t], zusamIn[t]) + bc)
-        # new memory: applying forget gate on the previous memory
-        # and then adding the input gate on the candidate memory
-        # c_new = f_gate * prev_c + i_gate * \hat{c}
         c_new = f_gate[t] * cs[t - 1] + i_gate[t] * cs[t]
+
         # output gate
-        # o_gate = sigmoid (Wo \cdot [h X] + b_o)
         o_gate = sigmoid(np.dot(Wo, zusamIn[t]) + bo)
         # new hidden state for the LSTM
-        # h = o_gate * tanh(c_new)
         hs[t] = o_gate * np.tanh(c_new)
         # DONE LSTM
 
         # output layer - softmax and cross-entropy loss
             # unnormalized log probabilities for next chars
-                # o = Why \cdot h + by
         os[t] = np.dot(Why, hs[t]) + by
             # softmax for probabilities for next chars
-                # p = softmax(o)
         ps[t] = softmax(os[t])
-        # cross entropy loss at time t:
-        # create an one hot vector for the label(targets) y
+        # one hot vector for the label(targets) y
         ys[t] = np.zeros((unique_chr_size, 1))
         ys[t][targets[t]] = 1
-        # and then cross-entropy (see the elman-rnn file for the hint)
+
         loss_t = np.sum(-np.log(ps[t]) * ys[t])
         loss += loss_t
 
     # define your activations
     memory = (hs[len(inputs) - 1], cs[len(inputs) - 1])
-    activations = (xs, cs, hs, os, ps, ys)  # if other para are needed in backwark, define it here
+    activations = (xs, cs, hs, os, ps, ys)
 
     return loss, activations, memory
 
 def backward(activations, clipping=True):
     xs, cs, hs, os, ps, ys = activations
-    # backward pass: compute gradients going backwards
-    # Here we allocate memory for the gradients
+    # backward pass, compute gradients
     dWex, dWhy = np.zeros_like(Wex), np.zeros_like(Why)
     dby = np.zeros_like(by)
     dWf, dWi, dWc, dWo = np.zeros_like(Wf), np.zeros_like(Wi), np.zeros_like(Wc), np.zeros_like(Wo)
     dbf, dbi, dbc, dbo = np.zeros_like(bf), np.zeros_like(bi), np.zeros_like(bc), np.zeros_like(bo)
     xs, cs, hs, os, ps, ys = activations
-    # similar to the hidden states in the vanilla RNN
-    # We need to initialize the gradients for these variables
+    # initialize the gradients for these variables
     dhnext = np.zeros_like(hs[0])
     dcnext = np.zeros_like(cs[0])
     # back propagation through time starts here
@@ -250,10 +223,6 @@ def sample(memory, seed_ix, n):
         # convert word indices to word embeddings
         wes = np.dot(Wex, x)
 
-        # LSTM cell operation
-        # first concatenate the input and h
-        # This step is irregular (to save the amount of matrix multiplication we have to do)
-        # I will refer to this vector as [h X]
         z = np.row_stack((h, wes))
 
         f_gate = sigmoid(Wf.dot(z) + bf)
@@ -279,7 +248,7 @@ def sample(memory, seed_ix, n):
 
     return generated_chars
 
-
+# cmd control commands
 if option == 'train':
 
     n, p = 0, 0
@@ -295,9 +264,9 @@ if option == 'train':
     smooth_loss = -np.log(1.0 / vocab_size) * seq_length  # loss at iteration 0
 
     while True:
-        # prepare inputs (we're sweeping from left to right in steps seq_length long)
+        # prepare inputs
         if p + seq_length + 1 >= len(data) or n == 0:
-            hprev = np.zeros((hidden_size, 1))  # reset RNN memory
+            hprev = np.zeros((hidden_size, 1))  # reset memory
             cprev = np.zeros((hidden_size, 1))
             p = 0  # go from start of data
         inputs = [char_to_ix[ch] for ch in data[p:p + seq_length]]
